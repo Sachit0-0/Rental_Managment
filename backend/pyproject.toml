@@ -1,0 +1,22 @@
+[tool.poetry]
+name = "bike-api"
+version = "0.1.0"
+description = ""
+authors = ["sachit"]
+readme = "README.md"
+
+[tool.poetry.dependencies]
+python = "^3.11"
+django = "^5.1.1"
+djangorestframework = "^3.15.2"
+djangorestframework-simplejwt = "^5.3.1"
+django-cors-headers = "^4.4.0"
+scikit-learn = "^1.5.2"
+transformers = "^4.45.2"
+torch = "^2.5.0"
+pillow = "^11.0.0"
+
+
+[build-system]
+requires = ["poetry-core"]
+build-backend = "poetry.core.masonry.api"
