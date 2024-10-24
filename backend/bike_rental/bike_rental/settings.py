@@ -33,6 +33,7 @@ AUTH_USER_MODEL = 'rentals.CustomUser'
 # Application definition
 
 INSTALLED_APPS = [
+    'jazzmin',
     'django.contrib.admin',
     'django.contrib.auth',
     'django.contrib.contenttypes',
@@ -43,6 +44,7 @@ INSTALLED_APPS = [
     'rest_framework_simplejwt',
     'rentals',
     'corsheaders',
+   
 ]
 
 REST_FRAMEWORK = {
@@ -163,3 +165,61 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 
 MEDIA_URL = '/media/'
 MEDIA_ROOT = BASE_DIR / 'bikes'  # This should be the correct path to the bikes directory
+
+JAZZMIN_SETTINGS = {
+    # Branding and Titles
+    "site_title": "Bike Rental Admin",  # Title in the browser tab
+    "site_header": "Bike Rental System Admin",  # Title in the admin header
+    "site_brand": "Bike Rental Admin",  # Brand name
+    
+    # Welcome Message
+    "welcome_sign": "Welcome to Bike Rental System Admin",
+ 
+
+    
+    # Use a specific theme (bootstrap-based themes like flatly, darkly, etc.)
+    "theme": "flatly",
+    
+    # Display recent actions on the dashboard
+    "recent_actions_visible": True,
+    
+    # Related modal popups for managing related models (for example, bike details)
+    "related_modal_active": True,
+    
+    
+    # Add icons to models (uses FontAwesome icons)
+    "icons": {
+        "bike_rental.Bike": "fas fa-bicycle",  # Icon for the Bike model
+        "bike_rental.Rental": "fas fa-handshake",  # Icon for the Rental model
+        "auth.User": "fas fa-user",  # Users
+    },
+    
+    # Top Menu Links for Quick Access
+    "topmenu_links": [
+        {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
+        {"name": "Bike Inventory", "url": "bike_rental/bike/", "permissions": ["bike_rental.view_bike"]},
+        {"name": "Rentals", "url": "rentals/rental/", "permissions": ["bike_rental.view_rental"]},
+        {"name": "Support", "url": "https://example.com/support", "new_window": True},
+    ],
+
+    # Custom user links in the user dropdown menu
+    "user_links": [
+        {"name": "Profile", "url": "auth/user", "new_window": False},
+        {"name": "Settings", "url": "admin:auth_user_change", "new_window": False},
+    ],
+
+    # Footer Links
+    "custom_links": {
+        "auth": [{
+            "name": "Documentation", 
+            "url": "https://example.com/docs", 
+            "icon": "fas fa-book",
+            "permissions": ["auth.view_user"]
+        }]
+    },
+    
+    # Change how the side menu looks
+    "hide_apps": [],  # List of apps to hide
+    "hide_models": [],  # List of models to hide
+    "order_with_respect_to": ["auth", "bike_rental"],  # Order of apps in the side menu
+}
