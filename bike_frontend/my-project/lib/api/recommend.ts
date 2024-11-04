@@ -1,4 +1,3 @@
-// lib/api/recommend.ts
 const api = process.env.NEXT_PUBLIC_API_URL;
 
 type TBike = {
@@ -9,15 +8,15 @@ type TBike = {
     model: string;
     price_per_hour: string;
     image: string | null;
-    
+    description: string;    
 };
 
 export async function fetchRecommendedBikes(token: string) {
     const res = await fetch(`${api}/recommend`, {
-        method: 'GET', // Specify the method
+        method: 'GET',
         headers: {
-            'Content-Type': 'application/json', // Set Content-Type to application/json
-            'Authorization': `Bearer ${token}`, // Include the Authorization token
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${token}`,
         },
     });
 
@@ -25,6 +24,7 @@ export async function fetchRecommendedBikes(token: string) {
         throw new Error('Failed to fetch recommended bikes');
     }
     
-    const data: TBike[] = await res.json(); // Await the JSON response
-    return data; // Return the fetched data
+    const data: TBike[] = await res.json();
+    return data;
 }
+

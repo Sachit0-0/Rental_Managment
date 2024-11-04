@@ -197,8 +197,6 @@ JAZZMIN_SETTINGS = {
     # Top Menu Links for Quick Access
     "topmenu_links": [
         {"name": "Home", "url": "admin:index", "permissions": ["auth.view_user"]},
-        {"name": "Bike Inventory", "url": "bike_rental/bike/", "permissions": ["bike_rental.view_bike"]},
-        {"name": "Rentals", "url": "rentals/rental/", "permissions": ["bike_rental.view_rental"]},
         {"name": "Support", "url": "https://example.com/support", "new_window": True},
     ],
 

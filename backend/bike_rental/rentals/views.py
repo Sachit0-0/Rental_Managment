@@ -1,17 +1,19 @@
-from django.shortcuts import render
 from rest_framework import viewsets, status
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, AllowAny
 from rest_framework_simplejwt.tokens import RefreshToken
-from .models import Bike, Rental
-from .serializers import BikeSerializer, RentalSerializer, UserSerializer
+from .models import Bike, Rental, Review
+from .serializers import BikeSerializer, RentalSerializer, UserSerializer, ReviewSerializer
 from django.utils import timezone
-from rest_framework.permissions import AllowAny
+from datetime import timedelta
+from transformers import pipeline
+
+
+recommendation_model = pipeline('text-classification', model='distilbert-base-uncased')
 
 
 class ProfileView(APIView):
-    """View to retrieve user's profile information along with their rental history."""
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
@@ -27,16 +29,36 @@ class ProfileView(APIView):
 
         return Response(response_data)
 
-class BikeViewSet(viewsets.ModelViewSet):
-    queryset = Bike.objects.all()
-    serializer_class = BikeSerializer
-    permission_classes = [AllowAny]  
+
+from rest_framework import viewsets
+from rest_framework.permissions import AllowAny
+from .models import Review
+from .serializers import ReviewSerializer
+
+class ReviewViewSet(viewsets.ModelViewSet):
+    serializer_class = ReviewSerializer
+    permission_classes = [AllowAny]
 
     def get_queryset(self):
-        return Bike.objects.filter(availability=True)
+        bike_id = self.request.query_params.get('bike_id')  # Get bike_id from query parameters
+        if bike_id:
+            return Review.objects.filter(bike_id=bike_id)  # Filter reviews by bike_id
+        return Review.objects.all()  # Return all reviews if no bike_id is provided
+
+def perform_create(self, serializer):
+    if self.request.user.is_authenticated:
+        serializer.save(user=self.request.user)
+    else:
+        # Handle the case where the user is not authenticated
+        raise ValueError("You must be logged in to create a review.")
 
 
-from datetime import timedelta
+class BikeViewSet(viewsets.ModelViewSet):
+    queryset = Bike.objects.filter(availability=True)
+    serializer_class = BikeSerializer
+    permission_classes = [AllowAny]
+
+
 class RentalViewSet(viewsets.ModelViewSet):
     queryset = Rental.objects.all()
     serializer_class = RentalSerializer
@@ -47,7 +69,7 @@ class RentalViewSet(viewsets.ModelViewSet):
         if not bike.availability:
             return Response({"error": "Bike is not available"}, status=status.HTTP_400_BAD_REQUEST)
 
-        rental_days = request.data.get('rental_days', 1)  
+        rental_days = request.data.get('rental_days', 1)
         end_time = timezone.now() + timedelta(days=rental_days)
 
         rental = Rental.objects.create(user=request.user, bike=bike, end_time=end_time)
@@ -68,6 +90,7 @@ class RentalViewSet(viewsets.ModelViewSet):
 
         return Response(RentalSerializer(rental).data)
 
+
 class RegisterView(APIView):
     permission_classes = [AllowAny]
 
@@ -75,9 +98,10 @@ class RegisterView(APIView):
         serializer = UserSerializer(data=request.data)
         if serializer.is_valid():
             gender = request.data.get('gender')
-            user = serializer.save(gender=gender)  
+            user = serializer.save(gender=gender)
             return Response({"message": "User created successfully"}, status=status.HTTP_201_CREATED)
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+
 
 class LogoutView(APIView):
     permission_classes = [IsAuthenticated]
@@ -91,29 +115,32 @@ class LogoutView(APIView):
         except Exception as e:
             return Response({"error": str(e)}, status=400)
 
-from transformers import pipeline
-from rest_framework.views import APIView
-from rest_framework.permissions import IsAuthenticated
-from rest_framework.response import Response
-from .models import Bike  # Assuming Bike is your model for available bikes
-from .serializers import BikeSerializer
-
-# Load a pre-trained Transformer model
-recommendation_model = pipeline('text-classification', model='distilbert-base-uncased')
-
-from rest_framework.response import Response
 
 class TNNBikeRecommendationView(APIView):
     permission_classes = [IsAuthenticated]
 
     def get(self, request):
         user = request.user
-        user_input = "Male user, prefers fast bikes." if user.gender == 'M' else "Female user, prefers scooters and lightweight bikes."
-        
+        # Setting default preferences based on gender
+        preferred_types = "bikes" if user.gender.lower() == "male" else "scooters"
+
+        # Construct the input string for the recommendation model
+        user_input = f"{user.gender} user, prefers {preferred_types}."
         prediction = recommendation_model(user_input)[0]['label'].lower()
-        bike_type = 'bike' if 'bike' in prediction else 'scooter'
-        
-        recommended_bikes = Bike.objects.filter(bike_type=bike_type, availability=True)
-        serializer = BikeSerializer(recommended_bikes, many=True, context={'request': request})  
+
+        bikes = Bike.objects.filter(availability=True)
+        scored_bikes = []
+        for bike in bikes:
+            bike_description = f"{bike.bike_type} that is {bike.description}"
+            score_output = recommendation_model(bike_description)[0]
+            # Check if the recommendation matches the prediction and adjust the score
+            score = score_output['score'] if prediction in score_output['label'].lower() else 0
+            scored_bikes.append((bike, score))
+
+        # Sort bikes by score and serialize the sorted list
+        scored_bikes.sort(key=lambda x: x[1], reverse=True)
+        sorted_bikes = [bike for bike, _ in scored_bikes]
+        serializer = BikeSerializer(sorted_bikes, many=True, context={'request': request})
         
         return Response(serializer.data)
+
