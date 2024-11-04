@@ -5,8 +5,11 @@ import { fetchBikeDetails } from '@/lib/api/bikes';
 import { useQuery } from 'react-query';
 import { Button } from '@/components/ui/button';
 import { rentBike } from '@/lib/api/rent';
+import { useRouter } from 'next/navigation';
+import Review from '@/components/ui/review';
 
 const BikeDetail = () => {
+  const router = useRouter();
   const { id } = useParams();
   const bikeId = Array.isArray(id) ? id[0] : id;
   const [isRenting, setIsRenting] = useState(false);
@@ -37,12 +40,14 @@ const BikeDetail = () => {
     try {
       const rentalData = await rentBike(bikeId, token, rentalDays);
       alert(`Successfully rented: ${rentalData.id}`);
+      router.push('/profile');
     } catch (err: any) {
       alert(err.response?.status === 401 ? 'Unauthorized. Please log in again.' : err.message || 'Renting failed.');
     } finally {
       setIsRenting(false);
     }
   };
+
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray">
       <div className="bg-black text-white shadow-lg rounded-lg p-6 max-w-sm w-full">
@@ -56,14 +61,19 @@ const BikeDetail = () => {
         <div className="flex items-center mb-4">
           <label className="mr-2">Rental Days:</label>
           <Button
-            onClick={() => setRentalDays((prev) => Math.max(prev - 1, 1))} // Decrease
+            onClick={() => setRentalDays((prev) => Math.max(prev - 1, 1))}
             disabled={rentalDays <= 1}
             className="bg-gray-700 text-white hover:bg-gray-600"
           >
             -
           </Button>
           <span className="mx-2">{rentalDays}</span>
-          <Button className="bg-gray-700 text-white hover:bg-gray-600" onClick={() => setRentalDays((prev) => prev + 1)}>+</Button>
+          <Button
+            className="bg-gray-700 text-white hover:bg-gray-600"
+            onClick={() => setRentalDays((prev) => prev + 1)}
+          >
+            +
+          </Button>
         </div>
 
         <Button
@@ -73,10 +83,12 @@ const BikeDetail = () => {
         >
           {isRenting ? 'Renting...' : 'Rent Now'}
         </Button>
+
+        {/* Reviews Section */}
+        <Review bikeId={bikeId} />
       </div>
     </div>
   );
 };
-
 
 export default BikeDetail;

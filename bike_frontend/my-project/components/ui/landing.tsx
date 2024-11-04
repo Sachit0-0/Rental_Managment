@@ -106,7 +106,7 @@ export default function Landing() {
             <h3 className="text-xl font-semibold mb-2">{bike.name}</h3>
             <p className="text-gray-600 mb-2">Model: {bike.model}</p>
             <p className="text-gray-600 mb-2">Type: {bike.bike_type}</p>
-            <p className="text-gray-600 mb-2">Availability: {bike.availability ? 'Available' : 'Not Available'}</p>
+            <p className="mb-2">Description: {bike.description}</p>
             <p className="text-gray-600 mb-4">Price per hour: Rs.{bike.price_per_hour}</p>
             <Link href={`/bike/${bike.id}`} passHref>
               <Button className="bg-gray-600 text-white py-2 px-4 rounded hover:bg-black transition">See More</Button>
